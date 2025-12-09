@@ -24,8 +24,8 @@ import {
   TableHeader,
   TableRow,
   Textarea,
-} from "../components"
-import { highlightText } from "../shared/lib/highlight.tsx"
+} from "../shared/ui"
+import { highlightText } from "../shared/lib/highlight"
 
 const PostsManager = () => {
   const navigate = useNavigate()
