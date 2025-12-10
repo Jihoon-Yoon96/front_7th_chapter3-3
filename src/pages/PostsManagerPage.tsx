@@ -38,6 +38,7 @@ import {
   updatePost as apiUpdatePost,
   deletePost as apiDeletePost,
 } from "../entities/post/api"
+import { fetchTags as apiFetchTags } from "../entities/tag/api"
 
 const PostsManager = () => {
   const navigate = useNavigate()
@@ -101,8 +102,7 @@ const PostsManager = () => {
   // 태그 가져오기
   const fetchTags = async () => {
     try {
-      const response = await fetch("/api/posts/tags")
-      const data = await response.json()
+      const data = await apiFetchTags()
       setTags(data)
     } catch (error) {
       console.error("태그 가져오기 오류:", error)
