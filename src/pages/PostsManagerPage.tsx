@@ -46,6 +46,7 @@ import {
   deleteComment as apiDeleteComment,
   likeComment as apiLikeComment,
 } from "../entities/comment/api"
+import { fetchUserById as apiFetchUserById } from "../entities/user/api"
 
 const PostsManager = () => {
   const navigate = useNavigate()
@@ -265,8 +266,7 @@ const PostsManager = () => {
   // 사용자 모달 열기
   const openUserModal = async (user: Pick<User, "id" | "username" | "image">) => {
     try {
-      const response = await fetch(`/api/users/${user.id}`)
-      const userData: User = await response.json()
+      const userData = await apiFetchUserById(user.id)
       setSelectedUser(userData)
       setShowUserModal(true)
     } catch (error) {
