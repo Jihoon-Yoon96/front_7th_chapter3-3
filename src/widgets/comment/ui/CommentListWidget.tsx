@@ -1,20 +1,20 @@
 import { Plus, Edit2 } from "lucide-react"
-import { Button } from "../../../../shared/ui"
-import { highlightText } from "../../../../shared/lib/highlight"
-import { Comment } from "../../../../entities/comment/model/types"
-import { useComments } from "../../../../entities/comment/model/useComment"
+import { Button } from "../../../shared/ui"
+import { highlightText } from "../../../shared/lib/highlight"
+import { Comment } from "../../../entities/comment/model/types"
+import { useComments } from "../../../entities/comment/model/useComment"
 import { useState, useEffect } from "react"
-import { AddCommentDialog } from "../../add/ui/AddCommentDialog"
-import { EditCommentDialog } from "../../edit/ui/EditCommentDialog"
-import { DeleteCommentButton } from "../../delete/ui/DeleteCommentButton"
-import { LikeCommentButton } from "../../like/ui/LikeCommentButton"
+import { AddCommentDialog } from "../../../features/comment/add/ui/AddCommentDialog"
+import { EditCommentDialog } from "../../../features/comment/edit/ui/EditCommentDialog"
+import { DeleteCommentButton } from "../../../features/comment/delete/ui/DeleteCommentButton"
+import { LikeCommentButton } from "../../../features/comment/like/ui/LikeCommentButton"
 
 interface CommentListProps {
   postId: number
   searchQuery: string
 }
 
-export const CommentList = ({ postId, searchQuery }: CommentListProps) => {
+export const CommentListWidget = ({ postId, searchQuery }: CommentListProps) => {
   const { comments, fetchComments } = useComments()
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
