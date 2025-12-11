@@ -21,7 +21,6 @@ import {
 } from "../shared/ui"
 import { highlightText } from "../shared/lib/highlight"
 import { Post } from "../entities/post/model/types"
-import { Comment } from "../entities/comment/model/types"
 import { Tag } from "../entities/tag/model/types"
 import { User } from "../entities/user/model/types"
 import { PostSearch } from "../features/post/search/ui/PostSearch"
@@ -31,6 +30,7 @@ import { AddPostButton } from "../features/post/add/ui/AddPostButton"
 import { AddPostDialog } from "../features/post/add/ui/AddPostDialog"
 import { EditPostDialog } from "../features/post/edit/ui/EditPostDialog"
 import { DeletePostButton } from "../features/post/delete/ui/DeletePostButton"
+import { CommentList } from "../features/comment/list/ui/CommentList"
 import { usePosts } from "../entities/post/model/usePost"
 import { useComments } from "../entities/comment/model/useComment"
 import { useTags } from "../entities/tag/model/useTags"
@@ -68,14 +68,7 @@ const PostsManager = () => {
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [newPost, setNewPost] = useState<Pick<Post, "title" | "body" | "userId">>({ title: "", body: "", userId: 1 })
   const [selectedTag, setSelectedTag] = useState(queryParams.get("tag") || "")
-  const [selectedComment, setSelectedComment] = useState<Comment | null>(null)
-  const [newComment, setNewComment] = useState<{ body: string; postId: number | null; userId: number }>({
-    body: "",
-    postId: null,
-    userId: 1,
-  })
-  const [showAddCommentDialog, setShowAddCommentDialog] = useState(false)
-  const [showEditCommentDialog, setShowEditCommentDialog] = useState(false)
+  
   const [showPostDetailDialog, setShowPostDetailDialog] = useState(false)
   const [showUserModal, setShowUserModal] = useState(false)
 
@@ -132,33 +125,9 @@ const PostsManager = () => {
     }
   }
 
-  // 댓글 추가 핸들러
-  const handleAddComment = async () => {
-    if (!newComment.postId) return
-    try {
-      await addComment(newComment as { body: string; postId: number; userId: number })
-      setShowAddCommentDialog(false)
-      setNewComment({ body: "", postId: null, userId: 1 })
-    } catch (error) {
-      console.error("댓글 추가 오류:", error)
-    }
-  }
-
-  // 댓글 업데이트 핸들러
-  const handleUpdateComment = async () => {
-    if (!selectedComment) return
-    try {
-      await updateComment(selectedComment.id, selectedComment.body, selectedComment.postId)
-      setShowEditCommentDialog(false)
-    } catch (error) {
-      console.error("댓글 업데이트 오류:", error)
-    }
-  }
-
   // 게시물 상세 보기
   const openPostDetail = (post: Post) => {
     setSelectedPost(post)
-    fetchComments(post.id)
     setShowPostDetailDialog(true)
   }
 
@@ -279,54 +248,6 @@ const PostsManager = () => {
     </Table>
   )
 
-  // 댓글 렌더링
-  const renderComments = (postId: number) => (
-    <div className="mt-2">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold">댓글</h3>
-        <Button
-          size="sm"
-          onClick={() => {
-            setNewComment((prev) => ({ ...prev, postId }))
-            setShowAddCommentDialog(true)
-          }}
-        >
-          <Plus className="w-3 h-3 mr-1" />
-          댓글 추가
-        </Button>
-      </div>
-      <div className="space-y-1">
-        {comments[postId]?.map((comment) => (
-          <div key={comment.id} className="flex items-center justify-between text-sm border-b pb-1">
-            <div className="flex items-center space-x-2 overflow-hidden">
-              <span className="font-medium truncate">{comment.user.username}:</span>
-              <span className="truncate">{highlightText(comment.body, searchQuery)}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Button variant="ghost" size="sm" onClick={() => likeComment(comment.id, postId)}>
-                <ThumbsUp className="w-3 h-3" />
-                <span className="ml-1 text-xs">{comment.likes}</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSelectedComment(comment)
-                  setShowEditCommentDialog(true)
-                }}
-              >
-                <Edit2 className="w-3 h-3" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => deleteComment(comment.id, postId)}>
-                <Trash2 className="w-3 h-3" />
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-
   return (
     <Card className="w-full max-w-6xl mx-auto">
       <CardHeader>
@@ -378,40 +299,6 @@ const PostsManager = () => {
         onUpdatePost={handleUpdatePost}
       />
 
-      {/* 댓글 추가 대화상자 */}
-      <Dialog open={showAddCommentDialog} onOpenChange={setShowAddCommentDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>새 댓글 추가</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Textarea
-              placeholder="댓글 내용"
-              value={newComment.body}
-              onChange={(e) => setNewComment({ ...newComment, body: e.target.value })}
-            />
-            <Button onClick={handleAddComment}>댓글 추가</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* 댓글 수정 대화상자 */}
-      <Dialog open={showEditCommentDialog} onOpenChange={setShowEditCommentDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>댓글 수정</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Textarea
-              placeholder="댓글 내용"
-              value={selectedComment?.body || ""}
-              onChange={(e) => setSelectedComment({ ...selectedComment, body: e.target.value })}
-            />
-            <Button onClick={handleUpdateComment}>댓글 업데이트</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* 게시물 상세 보기 대화상자 */}
       <Dialog open={showPostDetailDialog} onOpenChange={setShowPostDetailDialog}>
         <DialogContent className="max-w-3xl">
@@ -420,7 +307,7 @@ const PostsManager = () => {
           </DialogHeader>
           <div className="space-y-4">
             <p>{highlightText(selectedPost?.body, searchQuery)}</p>
-            {renderComments(selectedPost?.id)}
+            {selectedPost && <CommentList postId={selectedPost.id} searchQuery={searchQuery} />}
           </div>
         </DialogContent>
       </Dialog>
@@ -448,8 +335,9 @@ const PostsManager = () => {
                 <strong>전화번호:</strong> {selectedUser?.phone}
               </p>
               <p>
-                <strong>주소:</strong> {selectedUser?.address?.address}, {selectedUser?.address?.city},{" "}
-                {selectedUser?.address?.state}
+                <strong>주소:</strong> {selectedUser?.address?.address}, {selectedUser?.address?.city}, {
+                  selectedUser?.address?.state
+                }
               </p>
               <p>
                 <strong>직장:</strong> {selectedUser?.company?.name} - {selectedUser?.company?.title}

@@ -4,10 +4,10 @@ import { highlightText } from "../../../../shared/lib/highlight"
 import { Comment } from "../../../../entities/comment/model/types"
 import { useComments } from "../../../../entities/comment/model/useComment"
 import { useState, useEffect } from "react"
-import { AddCommentDialog } from "../add/ui/AddCommentDialog"
-import { EditCommentDialog } from "../edit/ui/EditCommentDialog"
-import { DeleteCommentButton } from "../delete/ui/DeleteCommentButton"
-import { LikeCommentButton } from "../like/ui/LikeCommentButton"
+import { AddCommentDialog } from "../../add/ui/AddCommentDialog"
+import { EditCommentDialog } from "../../edit/ui/EditCommentDialog"
+import { DeleteCommentButton } from "../../delete/ui/DeleteCommentButton"
+import { LikeCommentButton } from "../../like/ui/LikeCommentButton"
 
 interface CommentListProps {
   postId: number
