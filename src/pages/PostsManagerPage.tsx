@@ -94,7 +94,7 @@ const PostsManager = () => {
   // 게시물 검색 핸들러
   const handleSearch = () => {
     if (!searchQuery) {
-      fetchPosts(limit, skip)
+      fetchPosts(limit, skip, sortBy, sortOrder)
     } else {
       searchPosts(searchQuery)
     }
@@ -104,7 +104,7 @@ const PostsManager = () => {
   const handleSelectTag = (tag: string) => {
     setSelectedTag(tag)
     if (!tag || tag === "all") {
-      fetchPosts(limit, skip)
+      fetchPosts(limit, skip, sortBy, sortOrder)
     } else {
       fetchPostsByTag(tag)
     }
