@@ -22,10 +22,8 @@ import {
 import { highlightText } from "../shared/lib/highlight"
 import { Post } from "../entities/post/model/types"
 import { Comment } from "../entities/comment/model/types"
-import { User } from "../entities/user/model/types"
 import { Tag } from "../entities/tag/model/types"
-import { fetchTags as apiFetchTags } from "../entities/tag/api"
-import { fetchUserById as apiFetchUserById } from "../entities/user/api"
+import { User } from "../entities/user/model/types"
 import { PostSearch } from "../features/post/search/ui/PostSearch"
 import { PostFilter } from "../features/post/filter/ui/PostFilter"
 import { PostPagination } from "../features/post/pagination/ui/PostPagination"
@@ -35,6 +33,8 @@ import { EditPostDialog } from "../features/post/edit/ui/EditPostDialog"
 import { DeletePostButton } from "../features/post/delete/ui/DeletePostButton"
 import { usePosts } from "../entities/post/model/usePost"
 import { useComments } from "../entities/comment/model/useComment"
+import { useTags } from "../entities/tag/model/useTags"
+import { useUser } from "../entities/user/model/useUser"
 
 const PostsManager = () => {
   const navigate = useNavigate()
@@ -54,6 +54,8 @@ const PostsManager = () => {
   } = usePosts()
 
   const { comments, fetchComments, addComment, updateComment, deleteComment, likeComment } = useComments()
+  const { tags, fetchTags } = useTags()
+  const { selectedUser, fetchUserById, clearSelectedUser } = useUser()
 
   // 상태 관리
   const [skip, setSkip] = useState(parseInt(queryParams.get("skip") || "0"))
@@ -65,7 +67,6 @@ const PostsManager = () => {
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [newPost, setNewPost] = useState<Pick<Post, "title" | "body" | "userId">>({ title: "", body: "", userId: 1 })
-  const [tags, setTags] = useState<Tag[]>([])
   const [selectedTag, setSelectedTag] = useState(queryParams.get("tag") || "")
   const [selectedComment, setSelectedComment] = useState<Comment | null>(null)
   const [newComment, setNewComment] = useState<{ body: string; postId: number | null; userId: number }>({
@@ -77,7 +78,6 @@ const PostsManager = () => {
   const [showEditCommentDialog, setShowEditCommentDialog] = useState(false)
   const [showPostDetailDialog, setShowPostDetailDialog] = useState(false)
   const [showUserModal, setShowUserModal] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
 
   // URL 업데이트 함수
   const updateURL = () => {
@@ -89,16 +89,6 @@ const PostsManager = () => {
     if (sortOrder) params.set("sortOrder", sortOrder)
     if (selectedTag) params.set("tag", selectedTag)
     navigate(`?${params.toString()}`)
-  }
-
-  // 태그 가져오기
-  const fetchTags = async () => {
-    try {
-      const data = await apiFetchTags()
-      setTags(data)
-    } catch (error) {
-      console.error("태그 가져오기 오류:", error)
-    }
   }
 
   // 게시물 검색 핸들러
@@ -172,15 +162,20 @@ const PostsManager = () => {
     setShowPostDetailDialog(true)
   }
 
-  // 사용자 모달 열기
-  const openUserModal = async (user: Pick<User, "id" | "username" | "image">) => {
+  // 사용자 모달 열기 핸들러
+  const handleOpenUserModal = async (user: Pick<User, "id" | "username" | "image">) => {
     try {
-      const userData = await apiFetchUserById(user.id)
-      setSelectedUser(userData)
+      await fetchUserById(user.id)
       setShowUserModal(true)
     } catch (error) {
       console.error("사용자 정보 가져오기 오류:", error)
     }
+  }
+
+  // 사용자 모달 닫기 핸들러
+  const handleCloseUserModal = () => {
+    setShowUserModal(false)
+    clearSelectedUser()
   }
 
   useEffect(() => {
@@ -247,7 +242,7 @@ const PostsManager = () => {
               </div>
             </TableCell>
             <TableCell>
-              <div className="flex items-center space-x-2 cursor-pointer" onClick={() => openUserModal(post.author)}>
+              <div className="flex items-center space-x-2 cursor-pointer" onClick={() => handleOpenUserModal(post.author)}>
                 <img src={post.author?.image} alt={post.author?.username} className="w-8 h-8 rounded-full" />
                 <span>{post.author?.username}</span>
               </div>
@@ -431,7 +426,7 @@ const PostsManager = () => {
       </Dialog>
 
       {/* 사용자 모달 */}
-      <Dialog open={showUserModal} onOpenChange={setShowUserModal}>
+      <Dialog open={showUserModal} onOpenChange={handleCloseUserModal}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>사용자 정보</DialogTitle>
