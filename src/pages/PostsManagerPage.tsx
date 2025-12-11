@@ -32,7 +32,6 @@ import { CommentList } from "../features/comment/list/ui/CommentList"
 import { TagFilter } from "../features/tag/filter/ui/TagFilter"
 import { UserDetailModal } from "../features/user/detail/ui/UserDetailModal"
 import { usePosts } from "../entities/post/model/usePost"
-import { useComments } from "../entities/comment/model/useComment"
 import { useTags } from "../entities/tag/model/useTags"
 import { useUser } from "../entities/user/model/useUser"
 
