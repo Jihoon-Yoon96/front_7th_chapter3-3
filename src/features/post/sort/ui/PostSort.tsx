@@ -1,40 +1,15 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../../shared/ui"
-import { Tag } from "../../../../entities/tag/model/types"
 
-interface PostFilterProps {
-  tags: Tag[]
-  selectedTag: string
-  onSelectTag: (tag: string) => void
+interface PostSortProps {
   sortBy: string
   onSortByChange: (value: string) => void
   sortOrder: string
   onSortOrderChange: (value: string) => void
 }
 
-export const PostFilter = ({
-  tags,
-  selectedTag,
-  onSelectTag,
-  sortBy,
-  onSortByChange,
-  sortOrder,
-  onSortOrderChange,
-}: PostFilterProps) => {
+export const PostSort = ({ sortBy, onSortByChange, sortOrder, onSortOrderChange }: PostSortProps) => {
   return (
     <>
-      <Select value={selectedTag} onValueChange={onSelectTag}>
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="태그 선택" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">모든 태그</SelectItem>
-          {tags.map((tag) => (
-            <SelectItem key={tag.url} value={tag.slug}>
-              {tag.slug}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
       <Select value={sortBy} onValueChange={onSortByChange}>
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="정렬 기준" />

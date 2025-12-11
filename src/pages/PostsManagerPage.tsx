@@ -24,13 +24,14 @@ import { Post } from "../entities/post/model/types"
 import { Tag } from "../entities/tag/model/types"
 import { User } from "../entities/user/model/types"
 import { PostSearch } from "../features/post/search/ui/PostSearch"
-import { PostFilter } from "../features/post/filter/ui/PostFilter"
+import { PostSort } from "../features/post/sort/ui/PostSort"
 import { PostPagination } from "../features/post/pagination/ui/PostPagination"
 import { AddPostButton } from "../features/post/add/ui/AddPostButton"
 import { AddPostDialog } from "../features/post/add/ui/AddPostDialog"
 import { EditPostDialog } from "../features/post/edit/ui/EditPostDialog"
 import { DeletePostButton } from "../features/post/delete/ui/DeletePostButton"
 import { CommentList } from "../features/comment/list/ui/CommentList"
+import { TagFilter } from "../features/tag/filter/ui/TagFilter"
 import { usePosts } from "../entities/post/model/usePost"
 import { useComments } from "../entities/comment/model/useComment"
 import { useTags } from "../entities/tag/model/useTags"
@@ -261,13 +262,11 @@ const PostsManager = () => {
           {/* 검색 및 필터 컨트롤 */}
           <div className="flex gap-4">
             <PostSearch searchQuery={searchQuery} setSearchQuery={setSearchQuery} onSearch={handleSearch} />
-            <PostFilter
-              tags={tags}
-              selectedTag={selectedTag}
-              onSelectTag={(value) => {
+            <TagFilter selectedTag={selectedTag} onSelectTag={(value) => {
                 handleSelectTag(value)
                 updateURL()
-              }}
+              }} />
+            <PostSort
               sortBy={sortBy}
               onSortByChange={setSortBy}
               sortOrder={sortOrder}
