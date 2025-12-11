@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Edit2, MessageSquare, Plus, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react"
+import { Edit2, MessageSquare, ThumbsDown, ThumbsUp } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
 import {
   Button,
@@ -17,11 +17,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  Textarea,
 } from "../shared/ui"
 import { highlightText } from "../shared/lib/highlight"
 import { Post } from "../entities/post/model/types"
-import { Tag } from "../entities/tag/model/types"
 import { User } from "../entities/user/model/types"
 import { PostSearch } from "../features/post/search/ui/PostSearch"
 import { PostSort } from "../features/post/sort/ui/PostSort"
@@ -55,9 +53,9 @@ const PostsManager = () => {
     deletePost,
   } = usePosts()
 
-  const { comments, fetchComments, addComment, updateComment, deleteComment, likeComment } = useComments()
-  const { tags, fetchTags } = useTags()
-  const { selectedUser, fetchUserById, clearSelectedUser } = useUser()
+  // const { comments, fetchComments, addComment, updateComment, deleteComment, likeComment } = useComments()
+  const { fetchTags } = useTags()
+  const { fetchUserById } = useUser()
 
   // 상태 관리
   const [skip, setSkip] = useState(parseInt(queryParams.get("skip") || "0"))
