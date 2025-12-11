@@ -13,8 +13,9 @@ interface FetchUsersResponse {
   users: User[]
 }
 
-export const fetchPosts = async (limit: number, skip: number): Promise<FetchPostsResponse> => {
-  const postsData = await callAPI<FetchPostsResponse>(`/posts?limit=${limit}&skip=${skip}`)
+export const fetchPosts = async (limit: number, skip: number, sortBy: string, sortOrder: string): Promise<FetchPostsResponse> => {
+  const sortParams = sortBy ? `&sortBy=${sortBy}&sortOrder=${sortOrder}` : ""
+  const postsData = await callAPI<FetchPostsResponse>(`/posts?limit=${limit}&skip=${skip}${sortParams}`)
 
   const usersData = await callAPI<FetchUsersResponse>("/users?limit=0&select=username,image")
 

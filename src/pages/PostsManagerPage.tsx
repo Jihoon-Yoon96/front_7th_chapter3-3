@@ -186,7 +186,7 @@ const PostsManager = () => {
     if (selectedTag) {
       handleSelectTag(selectedTag)
     } else {
-      fetchPosts(limit, skip)
+      fetchPosts(limit, skip, sortBy, sortOrder)
     }
     updateURL()
   }, [skip, limit, sortBy, sortOrder, selectedTag])

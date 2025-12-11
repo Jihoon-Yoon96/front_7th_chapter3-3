@@ -18,10 +18,10 @@ export const usePosts = () => {
   const [total, setTotal] = useAtom(totalPostsAtom)
   const [loading, setLoading] = useAtom(postsLoadingAtom)
 
-  const fetchPosts = async (limit: number, skip: number) => {
+  const fetchPosts = async (limit: number, skip: number, sortBy: string, sortOrder: string) => {
     setLoading(true)
     try {
-      const { posts: fetchedPosts, total: fetchedTotal } = await apiFetchPosts(limit, skip)
+      const { posts: fetchedPosts, total: fetchedTotal } = await apiFetchPosts(limit, skip, sortBy, sortOrder)
       setPosts(fetchedPosts)
       setTotal(fetchedTotal)
     } catch (error) {
