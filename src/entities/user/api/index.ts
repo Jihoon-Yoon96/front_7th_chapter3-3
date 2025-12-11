@@ -1,7 +1,7 @@
 import { User } from "../model/types"
+import { callAPI } from "../../../shared/lib/callAPI"
 
-export const fetchUserById = async (userId: number): Promise<User> => {
-  const response = await fetch(`/api/users/${userId}`)
-  const userData: User = await response.json()
-  return userData
+export const fetchUserById = async (id: number): Promise<User> => {
+  const data = await callAPI<User>(`/users/${id}`)
+  return data
 }
