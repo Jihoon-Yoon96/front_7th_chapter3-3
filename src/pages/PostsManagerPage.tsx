@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Edit2, MessageSquare, Plus, ThumbsDown, ThumbsUp } from "lucide-react"
+import { Edit2, MessageSquare, Plus, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
 import {
   Button,
@@ -250,7 +250,7 @@ const PostsManager = () => {
       const data = await apiLikeComment(id, currentLikes)
       setComments((prev) => ({
         ...prev,
-        [postId]: prev[postId].map((comment) => (comment.id === data.id ? data : comment)),
+        [postId]: prev[postId].map((comment) => (comment.id === data.id ? { ...data, likes: comment.likes+1 } : comment)),
       }))
     } catch (error) {
       console.error("댓글 좋아요 오류:", error)
