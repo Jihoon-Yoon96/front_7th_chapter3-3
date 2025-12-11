@@ -20,18 +20,10 @@ import {
   Textarea,
 } from "../shared/ui"
 import { highlightText } from "../shared/lib/highlight"
-import { Post, PostWithAuthor } from "../entities/post/model/types"
+import { Post } from "../entities/post/model/types"
 import { Comment } from "../entities/comment/model/types"
 import { User } from "../entities/user/model/types"
 import { Tag } from "../entities/tag/model/types"
-import {
-  fetchPosts as apiFetchPosts,
-  searchPosts as apiSearchPosts,
-  fetchPostsByTag as apiFetchPostsByTag,
-  addPost as apiAddPost,
-  updatePost as apiUpdatePost,
-  deletePost as apiDeletePost,
-} from "../entities/post/api"
 import { fetchTags as apiFetchTags } from "../entities/tag/api"
 import {
   fetchCommentsByPostId as apiFetchCommentsByPostId,
@@ -48,15 +40,26 @@ import { AddPostButton } from "../features/post/add/ui/AddPostButton"
 import { AddPostDialog } from "../features/post/add/ui/AddPostDialog"
 import { EditPostDialog } from "../features/post/edit/ui/EditPostDialog"
 import { DeletePostButton } from "../features/post/delete/ui/DeletePostButton"
+import { usePosts } from "../entities/post/model/usePost"
 
 const PostsManager = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const queryParams = new URLSearchParams(location.search)
 
+  const {
+    posts,
+    total,
+    loading,
+    fetchPosts,
+    searchPosts,
+    fetchPostsByTag,
+    addPost,
+    updatePost,
+    deletePost,
+  } = usePosts()
+
   // 상태 관리
-  const [posts, setPosts] = useState<PostWithAuthor[]>([])
-  const [total, setTotal] = useState(0)
   const [skip, setSkip] = useState(parseInt(queryParams.get("skip") || "0"))
   const [limit, setLimit] = useState(parseInt(queryParams.get("limit") || "10"))
   const [searchQuery, setSearchQuery] = useState(queryParams.get("search") || "")
@@ -66,7 +69,6 @@ const PostsManager = () => {
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [newPost, setNewPost] = useState<Pick<Post, "title" | "body" | "userId">>({ title: "", body: "", userId: 1 })
-  const [loading, setLoading] = useState(false)
   const [tags, setTags] = useState<Tag[]>([])
   const [selectedTag, setSelectedTag] = useState(queryParams.get("tag") || "")
   const [comments, setComments] = useState<{ [postId: number]: Comment[] }>({})
@@ -94,20 +96,6 @@ const PostsManager = () => {
     navigate(`?${params.toString()}`)
   }
 
-  // 게시물 가져오기
-  const fetchPosts = async () => {
-    setLoading(true)
-    try {
-      const { posts, total } = await apiFetchPosts(limit, skip)
-      setPosts(posts)
-      setTotal(total)
-    } catch (error) {
-      console.error("게시물 가져오기 오류:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   // 태그 가져오기
   const fetchTags = async () => {
     try {
@@ -118,47 +106,29 @@ const PostsManager = () => {
     }
   }
 
-  // 게시물 검색
-  const searchPosts = async () => {
+  // 게시물 검색 핸들러
+  const handleSearch = () => {
     if (!searchQuery) {
-      fetchPosts()
-      return
-    }
-    setLoading(true)
-    try {
-      const { posts, total } = await apiSearchPosts(searchQuery)
-      setPosts(posts)
-      setTotal(total)
-    } catch (error) {
-      console.error("게시물 검색 오류:", error)
-    } finally {
-      setLoading(false)
+      fetchPosts(limit, skip)
+    } else {
+      searchPosts(searchQuery)
     }
   }
 
-  // 태그별 게시물 가져오기
-  const fetchPostsByTag = async (tag: string) => {
+  // 태그 선택 핸들러
+  const handleSelectTag = (tag: string) => {
+    setSelectedTag(tag)
     if (!tag || tag === "all") {
-      fetchPosts()
-      return
-    }
-    setLoading(true)
-    try {
-      const { posts, total } = await apiFetchPostsByTag(tag)
-      setPosts(posts)
-      setTotal(total)
-    } catch (error) {
-      console.error("태그별 게시물 가져오기 오류:", error)
-    } finally {
-      setLoading(false)
+      fetchPosts(limit, skip)
+    } else {
+      fetchPostsByTag(tag)
     }
   }
 
-  // 게시물 추가
-  const addPost = async () => {
+  // 게시물 추가 핸들러
+  const handleAddPost = async () => {
     try {
-      const data = await apiAddPost(newPost)
-      setPosts([data, ...posts])
+      await addPost(newPost)
       setShowAddDialog(false)
       setNewPost({ title: "", body: "", userId: 1 })
     } catch (error) {
@@ -166,25 +136,14 @@ const PostsManager = () => {
     }
   }
 
-  // 게시물 업데이트
-  const updatePost = async () => {
+  // 게시물 업데이트 핸들러
+  const handleUpdatePost = async () => {
     if (!selectedPost) return
     try {
-      const data = await apiUpdatePost(selectedPost)
-      setPosts(posts.map((post) => (post.id === data.id ? data : post)))
+      await updatePost(selectedPost)
       setShowEditDialog(false)
     } catch (error) {
       console.error("게시물 업데이트 오류:", error)
-    }
-  }
-
-  // 게시물 삭제
-  const deletePost = async (id: number) => {
-    try {
-      await apiDeletePost(id)
-      setPosts(posts.filter((post) => post.id !== id))
-    } catch (error) {
-      console.error("게시물 삭제 오류:", error)
     }
   }
 
@@ -281,9 +240,9 @@ const PostsManager = () => {
 
   useEffect(() => {
     if (selectedTag) {
-      fetchPostsByTag(selectedTag)
+      handleSelectTag(selectedTag)
     } else {
-      fetchPosts()
+      fetchPosts(limit, skip)
     }
     updateURL()
   }, [skip, limit, sortBy, sortOrder, selectedTag])
@@ -328,7 +287,7 @@ const PostsManager = () => {
                           : "text-blue-800 bg-blue-100 hover:bg-blue-200"
                       }`}
                       onClick={() => {
-                        setSelectedTag(tag)
+                        handleSelectTag(tag)
                         updateURL()
                       }}
                     >
@@ -436,13 +395,12 @@ const PostsManager = () => {
         <div className="flex flex-col gap-4">
           {/* 검색 및 필터 컨트롤 */}
           <div className="flex gap-4">
-            <PostSearch searchQuery={searchQuery} setSearchQuery={setSearchQuery} onSearch={searchPosts} />
+            <PostSearch searchQuery={searchQuery} setSearchQuery={setSearchQuery} onSearch={handleSearch} />
             <PostFilter
               tags={tags}
               selectedTag={selectedTag}
               onSelectTag={(value) => {
-                setSelectedTag(value)
-                fetchPostsByTag(value)
+                handleSelectTag(value)
                 updateURL()
               }}
               sortBy={sortBy}
@@ -465,7 +423,7 @@ const PostsManager = () => {
         onOpenChange={setShowAddDialog}
         newPost={newPost}
         onNewPostChange={(field, value) => setNewPost((prev) => ({ ...prev, [field]: value }))}
-        onAddPost={addPost}
+        onAddPost={handleAddPost}
       />
 
       <EditPostDialog
@@ -473,7 +431,7 @@ const PostsManager = () => {
         onOpenChange={setShowEditDialog}
         selectedPost={selectedPost}
         onPostChange={(field, value) => setSelectedPost((prev) => (prev ? { ...prev, [field]: value } : null))}
-        onUpdatePost={updatePost}
+        onUpdatePost={handleUpdatePost}
       />
 
       {/* 댓글 추가 대화상자 */}
