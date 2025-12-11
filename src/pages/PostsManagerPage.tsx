@@ -25,13 +25,6 @@ import { Comment } from "../entities/comment/model/types"
 import { User } from "../entities/user/model/types"
 import { Tag } from "../entities/tag/model/types"
 import { fetchTags as apiFetchTags } from "../entities/tag/api"
-import {
-  fetchCommentsByPostId as apiFetchCommentsByPostId,
-  addComment as apiAddComment,
-  updateComment as apiUpdateComment,
-  deleteComment as apiDeleteComment,
-  likeComment as apiLikeComment,
-} from "../entities/comment/api"
 import { fetchUserById as apiFetchUserById } from "../entities/user/api"
 import { PostSearch } from "../features/post/search/ui/PostSearch"
 import { PostFilter } from "../features/post/filter/ui/PostFilter"
@@ -41,6 +34,7 @@ import { AddPostDialog } from "../features/post/add/ui/AddPostDialog"
 import { EditPostDialog } from "../features/post/edit/ui/EditPostDialog"
 import { DeletePostButton } from "../features/post/delete/ui/DeletePostButton"
 import { usePosts } from "../entities/post/model/usePost"
+import { useComments } from "../entities/comment/model/useComment"
 
 const PostsManager = () => {
   const navigate = useNavigate()
@@ -59,6 +53,8 @@ const PostsManager = () => {
     deletePost,
   } = usePosts()
 
+  const { comments, fetchComments, addComment, updateComment, deleteComment, likeComment } = useComments()
+
   // 상태 관리
   const [skip, setSkip] = useState(parseInt(queryParams.get("skip") || "0"))
   const [limit, setLimit] = useState(parseInt(queryParams.get("limit") || "10"))
@@ -71,7 +67,6 @@ const PostsManager = () => {
   const [newPost, setNewPost] = useState<Pick<Post, "title" | "body" | "userId">>({ title: "", body: "", userId: 1 })
   const [tags, setTags] = useState<Tag[]>([])
   const [selectedTag, setSelectedTag] = useState(queryParams.get("tag") || "")
-  const [comments, setComments] = useState<{ [postId: number]: Comment[] }>({})
   const [selectedComment, setSelectedComment] = useState<Comment | null>(null)
   const [newComment, setNewComment] = useState<{ body: string; postId: number | null; userId: number }>({
     body: "",
@@ -147,26 +142,11 @@ const PostsManager = () => {
     }
   }
 
-  // 댓글 가져오기
-  const fetchComments = async (postId: number) => {
-    if (comments[postId]) return // 이미 불러온 댓글이 있으면 다시 불러오지 않음
-    try {
-      const data = await apiFetchCommentsByPostId(postId)
-      setComments((prev) => ({ ...prev, [postId]: data.comments }))
-    } catch (error) {
-      console.error("댓글 가져오기 오류:", error)
-    }
-  }
-
-  // 댓글 추가
-  const addComment = async () => {
+  // 댓글 추가 핸들러
+  const handleAddComment = async () => {
     if (!newComment.postId) return
     try {
-      const data = await apiAddComment(newComment)
-      setComments((prev) => ({
-        ...prev,
-        [data.postId]: [...(prev[data.postId] || []), data],
-      }))
+      await addComment(newComment as { body: string; postId: number; userId: number })
       setShowAddCommentDialog(false)
       setNewComment({ body: "", postId: null, userId: 1 })
     } catch (error) {
@@ -174,45 +154,14 @@ const PostsManager = () => {
     }
   }
 
-  // 댓글 업데이트
-  const updateComment = async () => {
+  // 댓글 업데이트 핸들러
+  const handleUpdateComment = async () => {
     if (!selectedComment) return
     try {
-      const data = await apiUpdateComment(selectedComment.id, selectedComment.body)
-      setComments((prev) => ({
-        ...prev,
-        [data.postId]: prev[data.postId].map((comment) => (comment.id === data.id ? data : comment)),
-      }))
+      await updateComment(selectedComment.id, selectedComment.body, selectedComment.postId)
       setShowEditCommentDialog(false)
     } catch (error) {
       console.error("댓글 업데이트 오류:", error)
-    }
-  }
-
-  // 댓글 삭제
-  const deleteComment = async (id: number, postId: number) => {
-    try {
-      await apiDeleteComment(id)
-      setComments((prev) => ({
-        ...prev,
-        [postId]: prev[postId].filter((comment) => comment.id !== id),
-      }))
-    } catch (error) {
-      console.error("댓글 삭제 오류:", error)
-    }
-  }
-
-  // 댓글 좋아요
-  const likeComment = async (id: number, postId: number) => {
-    try {
-      const currentLikes = comments[postId].find((c) => c.id === id)?.likes || 0
-      const data = await apiLikeComment(id, currentLikes)
-      setComments((prev) => ({
-        ...prev,
-        [postId]: prev[postId].map((comment) => (comment.id === data.id ? { ...data, likes: comment.likes+1 } : comment)),
-      }))
-    } catch (error) {
-      console.error("댓글 좋아요 오류:", error)
     }
   }
 
@@ -446,7 +395,7 @@ const PostsManager = () => {
               value={newComment.body}
               onChange={(e) => setNewComment({ ...newComment, body: e.target.value })}
             />
-            <Button onClick={addComment}>댓글 추가</Button>
+            <Button onClick={handleAddComment}>댓글 추가</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -463,7 +412,7 @@ const PostsManager = () => {
               value={selectedComment?.body || ""}
               onChange={(e) => setSelectedComment({ ...selectedComment, body: e.target.value })}
             />
-            <Button onClick={updateComment}>댓글 업데이트</Button>
+            <Button onClick={handleUpdateComment}>댓글 업데이트</Button>
           </div>
         </DialogContent>
       </Dialog>
