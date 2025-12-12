@@ -11,7 +11,7 @@ import { LikeCommentButton } from "../../../features/comment/like/ui/LikeComment
 import { useLikeComment } from "../../../features/comment/like/model/useLikeComment"
 import { useEditComment } from "../../../features/comment/edit/model/useEditComment"
 import { useDeleteComment } from "../../../features/comment/delete/model/useDeleteComment"
-import { useQueryClient } from "@tanstack/react-query"
+
 
 interface CommentListProps {
   postId: number
@@ -23,7 +23,7 @@ export const CommentListWidget = ({ postId, searchQuery }: CommentListProps) => 
     comments,
     isLoading,
   } = useComments(postId)
-  const queryClient = useQueryClient()
+
 
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
