@@ -1,6 +1,6 @@
-interface RequestOptions extends RequestInit {
+interface RequestOptions extends Omit<RequestInit, 'body'> {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-  body?: object;
+  body?: object | BodyInit;
 }
 
 export const callAPI = async <T>(endpoint: string, options?: RequestOptions): Promise<T> => {

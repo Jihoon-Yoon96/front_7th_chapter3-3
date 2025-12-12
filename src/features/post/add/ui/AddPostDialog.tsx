@@ -13,7 +13,7 @@ interface AddPostDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   newPost: Pick<Post, "title" | "body" | "userId">
-  onNewPostChange: (field: keyof typeof newPost, value: string | number) => void
+  onNewPostChange: (field: keyof Pick<Post, "title" | "body" | "userId">, value: string | number) => void
   onAddPost: () => void
 }
 

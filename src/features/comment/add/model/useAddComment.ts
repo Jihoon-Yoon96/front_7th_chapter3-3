@@ -9,7 +9,7 @@ export const useAddComment = () => {
 
   return useMutation<Comment, Error, AddCommentVariables>({
     mutationFn: apiAddComment,
-    onSuccess: (data, variables) => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["comments", variables.postId] })
     },
     onError: (error) => {
