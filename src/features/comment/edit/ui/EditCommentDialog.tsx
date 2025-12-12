@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, Textarea, Button } fr
 import { useEffect, useState } from "react"
 import { Comment } from "../../../../entities/comment/model/types"
 import { useComments } from "../../../../entities/comment/model/useComment"
+import { updateComment as apiUpdateComment } from "../api"
 
 interface EditCommentDialogProps {
   open: boolean
@@ -11,7 +12,7 @@ interface EditCommentDialogProps {
 
 export const EditCommentDialog = ({ open, onOpenChange, selectedComment }: EditCommentDialogProps) => {
   const [editedCommentBody, setEditedCommentBody] = useState("")
-  const { updateComment } = useComments()
+  const { setComments } = useComments()
 
   useEffect(() => {
     if (selectedComment) {
@@ -24,7 +25,13 @@ export const EditCommentDialog = ({ open, onOpenChange, selectedComment }: EditC
   const handleUpdateComment = async () => {
     if (!selectedComment || !editedCommentBody.trim()) return
     try {
-      await updateComment(selectedComment.id, editedCommentBody, selectedComment.postId)
+      const data = await apiUpdateComment(selectedComment.id, editedCommentBody)
+      setComments((prev) => ({
+        ...prev,
+        [selectedComment.postId]: prev[selectedComment.postId].map((comment) =>
+          comment.id === data.id ? data : comment,
+        ),
+      }))
       onOpenChange(false)
     } catch (error) {
       console.error("댓글 업데이트 오류:", error)

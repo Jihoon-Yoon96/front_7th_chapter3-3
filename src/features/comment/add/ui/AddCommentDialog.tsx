@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, Textarea, Button } from "../../../../shared/ui"
 import { useState } from "react"
 import { useComments } from "../../../../entities/comment/model/useComment"
+import { addComment as apiAddComment } from "../api"
 
 interface AddCommentDialogProps {
   open: boolean
@@ -10,12 +11,16 @@ interface AddCommentDialogProps {
 
 export const AddCommentDialog = ({ open, onOpenChange, postId }: AddCommentDialogProps) => {
   const [newCommentBody, setNewCommentBody] = useState("")
-  const { addComment } = useComments()
+  const { setComments } = useComments()
 
   const handleAddComment = async () => {
     if (!postId || !newCommentBody.trim()) return
     try {
-      await addComment({ body: newCommentBody, postId, userId: 1 }) // userId는 임시로 1로 설정
+      const data = await apiAddComment({ body: newCommentBody, postId, userId: 1 }) // userId는 임시로 1로 설정
+      setComments((prev) => ({
+        ...prev,
+        [data.postId]: [...(prev[data.postId] || []), data],
+      }))
       setNewCommentBody("")
       onOpenChange(false)
     } catch (error) {
