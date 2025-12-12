@@ -32,7 +32,7 @@ import { useUser } from "../../../entities/user/model/useUser"
 import { addPost as apiAddPost } from "../../../features/post/add/api"
 import { updatePost as apiUpdatePost } from "../../../features/post/edit/api"
 import { deletePost as apiDeletePost } from "../../../features/post/delete/api"
-import { useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 
 export const PostsManagerWidget = () => {
   const navigate = useNavigate()
@@ -40,105 +40,86 @@ export const PostsManagerWidget = () => {
   const queryParams = new URLSearchParams(location.search)
   const queryClient = useQueryClient()
 
-  
+  // 상태 관리
+  const [skip, setSkip] = useState(parseInt(queryParams.get("skip") || "0"))
+  const [limit, setLimit] = useState(parseInt(queryParams.get("limit") || "10"))
+  const [searchQuery, setSearchQuery] = useState(queryParams.get("search") || "")
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null)
+  const [sortBy, setSortBy] = useState(queryParams.get("sortBy") || "")
+  const [sortOrder, setSortOrder] = useState(queryParams.get("sortOrder") || "asc")
+  const [showAddDialog, setShowAddDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [newPost, setNewPost] = useState<Pick<Post, "title" | "body" | "userId"> | null>({ title: "", body: "", userId: 1 })
+  const [selectedTag, setSelectedTag] = useState(queryParams.get("tag") || "")
+  const [showPostDetailDialog, setShowPostDetailDialog] = useState(false)
+  const [showUserModal, setShowUserModal] = useState(false)
 
-    // 상태 관리
+  const {
+    posts,
+    total,
+    isLoading,
+  } = usePosts({ limit, skip, sortBy, sortOrder, searchQuery, tag: selectedTag })
+  const { fetchUserById } = useUser()
 
-    const [skip, setSkip] = useState(parseInt(queryParams.get("skip") || "0"))
-
-    const [limit, setLimit] = useState(parseInt(queryParams.get("limit") || "10"))
-
-    const [searchQuery, setSearchQuery] = useState(queryParams.get("search") || "")
-
-    const [selectedPost, setSelectedPost] = useState<Post | null>(null)
-
-    const [sortBy, setSortBy] = useState(queryParams.get("sortBy") || "")
-
-    const [sortOrder, setSortOrder] = useState(queryParams.get("sortOrder") || "asc")
-
-    const [showAddDialog, setShowAddDialog] = useState(false)
-
-    const [showEditDialog, setShowEditDialog] = useState(false)
-
-    const [newPost, setNewPost] = useState<Pick<Post, "title" | "body" | "userId">>({ title: "", body: "", userId: 1 })
-
-    const [selectedTag, setSelectedTag] = useState(queryParams.get("tag") || "")
-
-    const [showPostDetailDialog, setShowPostDetailDialog] = useState(false)
-
-    const [showUserModal, setShowUserModal] = useState(false)
-
-  
-
-    const {
-
-      posts,
-
-      total,
-
-      isLoading,
-
-    } = usePosts({ limit, skip, sortBy, sortOrder, searchQuery, tag: selectedTag })
-
-    const { fetchUserById } = useUser()
-
-  
-
-    // URL 업데이트 함수
-
-    const updateURL = () => {
-
-      const params = new URLSearchParams()
-
-      if (skip) params.set("skip", skip.toString())
-
-      if (limit) params.set("limit", limit.toString())
-
-      if (searchQuery) params.set("search", searchQuery)
-
-      if (sortBy) params.set("sortBy", sortBy)
-
-      if (sortOrder) params.set("sortOrder", sortOrder)
-
-      if (selectedTag) params.set("tag", selectedTag)
-
-      navigate(`?${params.toString()}`)
-
-    }
-
-
-  // 게시물 추가 핸들러
-  const handleAddPost = async () => {
-    try {
-      await apiAddPost(newPost)
-      await queryClient.invalidateQueries({ queryKey: ["posts"] })
+  const addPostMutation = useMutation({
+    mutationFn: apiAddPost,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts"] })
       setShowAddDialog(false)
       setNewPost({ title: "", body: "", userId: 1 })
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error("게시물 추가 오류:", error)
-    }
+    },
+  })
+
+  const updatePostMutation = useMutation({
+    mutationFn: apiUpdatePost,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts"] })
+      setShowEditDialog(false)
+    },
+    onError: (error) => {
+      console.error("게시물 업데이트 오류:", error)
+    },
+  })
+
+  const deletePostMutation = useMutation({
+    mutationFn: apiDeletePost,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts"] })
+    },
+    onError: (error) => {
+      console.error("게시물 삭제 오류:", error)
+    },
+  })
+
+  // URL 업데이트 함수
+  const updateURL = () => {
+    const params = new URLSearchParams()
+    if (skip) params.set("skip", skip.toString())
+    if (limit) params.set("limit", limit.toString())
+    if (searchQuery) params.set("search", searchQuery)
+    if (sortBy) params.set("sortBy", sortBy)
+    if (sortOrder) params.set("sortOrder", sortOrder)
+    if (selectedTag) params.set("tag", selectedTag)
+    navigate(`?${params.toString()}`)
+  }
+
+  // 게시물 추가 핸들러
+  const handleAddPost = () => {
+    addPostMutation.mutate(newPost)
   }
 
   // 게시물 업데이트 핸들러
-  const handleUpdatePost = async () => {
+  const handleUpdatePost = () => {
     if (!selectedPost) return
-    try {
-      await apiUpdatePost(selectedPost)
-      await queryClient.invalidateQueries({ queryKey: ["posts"] })
-      setShowEditDialog(false)
-    } catch (error) {
-      console.error("게시물 업데이트 오류:", error)
-    }
+    updatePostMutation.mutate(selectedPost)
   }
 
   // 게시물 삭제 핸들러
-  const handleDeletePost = async (id: number) => {
-    try {
-      await apiDeletePost(id)
-      await queryClient.invalidateQueries({ queryKey: ["posts"] })
-    } catch (error) {
-      console.error("게시물 삭제 오류:", error)
-    }
+  const handleDeletePost = (id: number) => {
+    deletePostMutation.mutate(id)
   }
 
   // 게시물 상세 보기
@@ -164,8 +145,6 @@ export const PostsManagerWidget = () => {
       window.removeEventListener("open-add-post-dialog", handleOpenDialog)
     }
   }, [])
-
-
 
   useEffect(() => {
     updateURL()
@@ -279,7 +258,11 @@ export const PostsManagerWidget = () => {
         </div>
 
         {/* 게시물 테이블 */}
-        {isLoading ? <div className="flex justify-center p-4">로딩 중...</div> : renderPostTable()}
+        {isLoading || addPostMutation.isPending || updatePostMutation.isPending || deletePostMutation.isPending ? (
+          <div className="flex justify-center p-4">로딩 중...</div>
+        ) : (
+          renderPostTable()
+        )}
 
         {/* 페이지네이션 */}
         <PostPagination limit={limit} onLimitChange={setLimit} skip={skip} onSkipChange={setSkip} total={total} />
