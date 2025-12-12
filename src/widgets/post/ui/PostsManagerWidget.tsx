@@ -32,67 +32,86 @@ import { useUser } from "../../../entities/user/model/useUser"
 import { addPost as apiAddPost } from "../../../features/post/add/api"
 import { updatePost as apiUpdatePost } from "../../../features/post/edit/api"
 import { deletePost as apiDeletePost } from "../../../features/post/delete/api"
+import { useQueryClient } from "@tanstack/react-query"
 
 export const PostsManagerWidget = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const queryParams = new URLSearchParams(location.search)
+  const queryClient = useQueryClient()
 
-  const { posts, total, loading, fetchPosts, searchPosts, fetchPostsByTag, setPosts } = usePosts()
-
-  const { fetchUserById } = useUser()
-
-  // 상태 관리
-  const [skip, setSkip] = useState(parseInt(queryParams.get("skip") || "0"))
-  const [limit, setLimit] = useState(parseInt(queryParams.get("limit") || "10"))
-  const [searchQuery, setSearchQuery] = useState(queryParams.get("search") || "")
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null)
-  const [sortBy, setSortBy] = useState(queryParams.get("sortBy") || "")
-  const [sortOrder, setSortOrder] = useState(queryParams.get("sortOrder") || "asc")
-  const [showAddDialog, setShowAddDialog] = useState(false)
-  const [showEditDialog, setShowEditDialog] = useState(false)
-  const [newPost, setNewPost] = useState<Pick<Post, "title" | "body" | "userId">>({ title: "", body: "", userId: 1 })
-  const [selectedTag, setSelectedTag] = useState(queryParams.get("tag") || "")
   
-  const [showPostDetailDialog, setShowPostDetailDialog] = useState(false)
-  const [showUserModal, setShowUserModal] = useState(false)
 
-  // URL 업데이트 함수
-  const updateURL = () => {
-    const params = new URLSearchParams()
-    if (skip) params.set("skip", skip.toString())
-    if (limit) params.set("limit", limit.toString())
-    if (searchQuery) params.set("search", searchQuery)
-    if (sortBy) params.set("sortBy", sortBy)
-    if (sortOrder) params.set("sortOrder", sortOrder)
-    if (selectedTag) params.set("tag", selectedTag)
-    navigate(`?${params.toString()}`)
-  }
+    // 상태 관리
 
-  // 게시물 검색 핸들러
-  const handleSearch = () => {
-    if (!searchQuery) {
-      fetchPosts(limit, skip, sortBy, sortOrder)
-    } else {
-      searchPosts(searchQuery)
+    const [skip, setSkip] = useState(parseInt(queryParams.get("skip") || "0"))
+
+    const [limit, setLimit] = useState(parseInt(queryParams.get("limit") || "10"))
+
+    const [searchQuery, setSearchQuery] = useState(queryParams.get("search") || "")
+
+    const [selectedPost, setSelectedPost] = useState<Post | null>(null)
+
+    const [sortBy, setSortBy] = useState(queryParams.get("sortBy") || "")
+
+    const [sortOrder, setSortOrder] = useState(queryParams.get("sortOrder") || "asc")
+
+    const [showAddDialog, setShowAddDialog] = useState(false)
+
+    const [showEditDialog, setShowEditDialog] = useState(false)
+
+    const [newPost, setNewPost] = useState<Pick<Post, "title" | "body" | "userId">>({ title: "", body: "", userId: 1 })
+
+    const [selectedTag, setSelectedTag] = useState(queryParams.get("tag") || "")
+
+    const [showPostDetailDialog, setShowPostDetailDialog] = useState(false)
+
+    const [showUserModal, setShowUserModal] = useState(false)
+
+  
+
+    const {
+
+      posts,
+
+      total,
+
+      isLoading,
+
+    } = usePosts({ limit, skip, sortBy, sortOrder, searchQuery, tag: selectedTag })
+
+    const { fetchUserById } = useUser()
+
+  
+
+    // URL 업데이트 함수
+
+    const updateURL = () => {
+
+      const params = new URLSearchParams()
+
+      if (skip) params.set("skip", skip.toString())
+
+      if (limit) params.set("limit", limit.toString())
+
+      if (searchQuery) params.set("search", searchQuery)
+
+      if (sortBy) params.set("sortBy", sortBy)
+
+      if (sortOrder) params.set("sortOrder", sortOrder)
+
+      if (selectedTag) params.set("tag", selectedTag)
+
+      navigate(`?${params.toString()}`)
+
     }
-  }
 
-  // 태그 선택 핸들러
-  const handleSelectTag = (tag: string) => {
-    setSelectedTag(tag)
-    if (!tag || tag === "all") {
-      fetchPosts(limit, skip, sortBy, sortOrder)
-    } else {
-      fetchPostsByTag(tag)
-    }
-  }
 
   // 게시물 추가 핸들러
   const handleAddPost = async () => {
     try {
-      const data = await apiAddPost(newPost)
-      setPosts((prevPosts) => [data as PostWithAuthor, ...prevPosts])
+      await apiAddPost(newPost)
+      await queryClient.invalidateQueries({ queryKey: ["posts"] })
       setShowAddDialog(false)
       setNewPost({ title: "", body: "", userId: 1 })
     } catch (error) {
@@ -104,8 +123,8 @@ export const PostsManagerWidget = () => {
   const handleUpdatePost = async () => {
     if (!selectedPost) return
     try {
-      const data = await apiUpdatePost(selectedPost)
-      setPosts((prevPosts) => prevPosts.map((post) => (post.id === data.id ? (data as PostWithAuthor) : post)))
+      await apiUpdatePost(selectedPost)
+      await queryClient.invalidateQueries({ queryKey: ["posts"] })
       setShowEditDialog(false)
     } catch (error) {
       console.error("게시물 업데이트 오류:", error)
@@ -116,7 +135,7 @@ export const PostsManagerWidget = () => {
   const handleDeletePost = async (id: number) => {
     try {
       await apiDeletePost(id)
-      setPosts((prevPosts) => prevPosts.filter((post) => post.id !== id))
+      await queryClient.invalidateQueries({ queryKey: ["posts"] })
     } catch (error) {
       console.error("게시물 삭제 오류:", error)
     }
@@ -149,13 +168,8 @@ export const PostsManagerWidget = () => {
 
 
   useEffect(() => {
-    if (selectedTag) {
-      handleSelectTag(selectedTag)
-    } else {
-      fetchPosts(limit, skip, sortBy, sortOrder)
-    }
     updateURL()
-  }, [skip, limit, sortBy, sortOrder, selectedTag])
+  }, [skip, limit, sortBy, sortOrder, selectedTag, searchQuery])
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
@@ -197,8 +211,7 @@ export const PostsManagerWidget = () => {
                           : "text-blue-800 bg-blue-100 hover:bg-blue-200"
                       }`}
                       onClick={() => {
-                        handleSelectTag(tag)
-                        updateURL()
+                        setSelectedTag(tag)
                       }}
                     >
                       {tag}
@@ -250,11 +263,13 @@ export const PostsManagerWidget = () => {
       <div className="flex flex-col gap-4">
         {/* 검색 및 필터 컨트롤 */}
         <div className="flex gap-4">
-          <PostSearch searchQuery={searchQuery} setSearchQuery={setSearchQuery} onSearch={handleSearch} />
-          <TagFilter selectedTag={selectedTag} onSelectTag={(value) => {
-              handleSelectTag(value)
-              updateURL()
-            }} />
+                    <PostSearch searchQuery={searchQuery} setSearchQuery={setSearchQuery} onSearch={() => updateURL()} />
+                    <TagFilter
+                      selectedTag={selectedTag}
+                      onSelectTag={(value) => {
+                        setSelectedTag(value)
+                      }}
+                    />
           <PostSort
             sortBy={sortBy}
             onSortByChange={setSortBy}
@@ -264,7 +279,7 @@ export const PostsManagerWidget = () => {
         </div>
 
         {/* 게시물 테이블 */}
-        {loading ? <div className="flex justify-center p-4">로딩 중...</div> : renderPostTable()}
+        {isLoading ? <div className="flex justify-center p-4">로딩 중...</div> : renderPostTable()}
 
         {/* 페이지네이션 */}
         <PostPagination limit={limit} onLimitChange={setLimit} skip={skip} onSkipChange={setSkip} total={total} />

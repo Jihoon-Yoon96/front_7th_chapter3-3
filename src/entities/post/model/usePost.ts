@@ -1,66 +1,42 @@
-import { atom, useAtom } from "jotai"
-import { PostWithAuthor } from "./types"
+import { useQuery } from "@tanstack/react-query"
 import {
   fetchPosts as apiFetchPosts,
   fetchPostsByTag as apiFetchPostsByTag,
   searchPosts as apiSearchPosts,
 } from "../api"
 
-const postsAtom = atom<PostWithAuthor[]>([])
-const totalPostsAtom = atom(0)
-const postsLoadingAtom = atom(false)
+interface UsePostsParams {
+  limit: number
+  skip: number
+  sortBy: string
+  sortOrder: string
+  searchQuery?: string
+  tag?: string
+}
 
-export const usePosts = () => {
-  const [posts, setPosts] = useAtom(postsAtom)
-  const [total, setTotal] = useAtom(totalPostsAtom)
-  const [loading, setLoading] = useAtom(postsLoadingAtom)
-
-  const fetchPosts = async (limit: number, skip: number, sortBy: string, sortOrder: string) => {
-    setLoading(true)
-    try {
-      const { posts: fetchedPosts, total: fetchedTotal } = await apiFetchPosts(limit, skip, sortBy, sortOrder)
-      setPosts(fetchedPosts)
-      setTotal(fetchedTotal)
-    } catch (error) {
-      console.error("Error fetching posts:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const searchPosts = async (query: string) => {
-    setLoading(true)
-    try {
-      const { posts: searchedPosts, total: searchedTotal } = await apiSearchPosts(query)
-      setPosts(searchedPosts)
-      setTotal(searchedTotal)
-    } catch (error) {
-      console.error("Error searching posts:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchPostsByTag = async (tag: string) => {
-    setLoading(true)
-    try {
-      const { posts: tagPosts, total: tagTotal } = await apiFetchPostsByTag(tag)
-      setPosts(tagPosts)
-      setTotal(tagTotal)
-    } catch (error) {
-      console.error("Error fetching posts by tag:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
+export const usePosts = ({ limit, skip, sortBy, sortOrder, searchQuery, tag }: UsePostsParams) => {
+  const {
+    data,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["posts", { limit, skip, sortBy, sortOrder, searchQuery, tag }],
+    queryFn: () => {
+      if (searchQuery) {
+        return apiSearchPosts(searchQuery)
+      }
+      if (tag) {
+        return apiFetchPostsByTag(tag)
+      }
+      return apiFetchPosts(limit, skip, sortBy, sortOrder)
+    },
+    enabled: !!searchQuery || !!tag || (limit > 0),
+  })
 
   return {
-    posts,
-    total,
-    loading,
-    fetchPosts,
-    searchPosts,
-    fetchPostsByTag,
-    setPosts,
+    posts: data?.posts ?? [],
+    total: data?.total ?? 0,
+    isLoading,
+    isError,
   }
 }
