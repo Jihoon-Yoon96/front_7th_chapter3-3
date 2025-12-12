@@ -40,7 +40,6 @@ export const PostsManagerWidget = () => {
 
   const { posts, total, loading, fetchPosts, searchPosts, fetchPostsByTag, setPosts } = usePosts()
 
-  const { fetchTags } = useTags()
   const { fetchUserById } = useUser()
 
   // 상태 관리
@@ -147,9 +146,7 @@ export const PostsManagerWidget = () => {
     }
   }, [])
 
-  useEffect(() => {
-    fetchTags()
-  }, [])
+
 
   useEffect(() => {
     if (selectedTag) {

@@ -1,6 +1,5 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../../shared/ui"
 import { useTags } from "../../../../entities/tag/model/useTags"
-import { useEffect } from "react"
 
 interface TagFilterProps {
   selectedTag: string
@@ -8,12 +7,7 @@ interface TagFilterProps {
 }
 
 export const TagFilter = ({ selectedTag, onSelectTag }: TagFilterProps) => {
-  const { tags, fetchTags } = useTags()
-
-  useEffect(() => {
-    console.log('useEffect, fetchTags')
-    fetchTags()
-  }, [fetchTags])
+  const { tags } = useTags()
 
   return (
     <Select value={selectedTag} onValueChange={onSelectTag}>
