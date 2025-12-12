@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, Textarea, Button } from "../../../../shared/ui"
 import { useState } from "react"
-import { useComments } from "../../../../entities/comment/model/useComment"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { addComment as apiAddComment } from "../api"
 
 interface AddCommentDialogProps {
@@ -11,21 +11,23 @@ interface AddCommentDialogProps {
 
 export const AddCommentDialog = ({ open, onOpenChange, postId }: AddCommentDialogProps) => {
   const [newCommentBody, setNewCommentBody] = useState("")
-  const { setComments } = useComments()
+  const queryClient = useQueryClient()
 
-  const handleAddComment = async () => {
-    if (!postId || !newCommentBody.trim()) return
-    try {
-      const data = await apiAddComment({ body: newCommentBody, postId, userId: 1 }) // userId는 임시로 1로 설정
-      setComments((prev) => ({
-        ...prev,
-        [data.postId]: [...(prev[data.postId] || []), data],
-      }))
+  const { mutate: addComment } = useMutation({
+    mutationFn: apiAddComment,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments", postId] })
       setNewCommentBody("")
       onOpenChange(false)
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error("댓글 추가 오류:", error)
-    }
+    },
+  })
+
+  const handleAddComment = () => {
+    if (!postId || !newCommentBody.trim()) return
+    addComment({ body: newCommentBody, postId, userId: 1 }) // userId는 임시로 1로 설정
   }
 
   return (
