@@ -8,9 +8,9 @@ import { AddCommentDialog } from "../../../features/comment/add/ui/AddCommentDia
 import { EditCommentDialog } from "../../../features/comment/edit/ui/EditCommentDialog"
 import { DeleteCommentButton } from "../../../features/comment/delete/ui/DeleteCommentButton"
 import { LikeCommentButton } from "../../../features/comment/like/ui/LikeCommentButton"
+import { useLikeComment } from "../../../features/comment/like/model/useLikeComment"
 import { updateComment as apiUpdateComment } from "../../../features/comment/edit/api"
 import { deleteComment as apiDeleteComment } from "../../../features/comment/delete/api"
-import { likeComment as apiLikeComment } from "../../../features/comment/like/api"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
 interface CommentListProps {
@@ -50,16 +50,7 @@ export const CommentListWidget = ({ postId, searchQuery }: CommentListProps) => 
     },
   })
 
-  const likeCommentMutation = useMutation({
-    mutationFn: (variables: { id: number; currentLikes: number }) =>
-      apiLikeComment(variables.id, variables.currentLikes),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["comments", postId] })
-    },
-    onError: (error) => {
-      console.error("댓글 좋아요 오류:", error)
-    },
-  })
+  const { mutate: likeComment, isPending: isLikingComment } = useLikeComment(postId)
 
   const handleOpenEditDialog = (comment: Comment) => {
     setSelectedComment(comment)
@@ -75,10 +66,10 @@ export const CommentListWidget = ({ postId, searchQuery }: CommentListProps) => 
   }
 
   const handleLikeComment = (commentId: number, currentLikes: number) => {
-    likeCommentMutation.mutate({ id: commentId, currentLikes })
+    likeComment({ id: commentId, currentLikes })
   }
 
-  const isMutating = updateCommentMutation.isPending || deleteCommentMutation.isPending || likeCommentMutation.isPending
+  const isMutating = updateCommentMutation.isPending || deleteCommentMutation.isPending || isLikingComment
 
   if (isLoading || isMutating) {
     return <div className="flex justify-center p-4">댓글 로딩 중...</div>
@@ -103,7 +94,6 @@ export const CommentListWidget = ({ postId, searchQuery }: CommentListProps) => 
             <div className="flex items-center space-x-1">
               <LikeCommentButton
                 commentId={comment.id}
-                postId={postId}
                 likes={comment.likes}
                 onLike={handleLikeComment}
               />
