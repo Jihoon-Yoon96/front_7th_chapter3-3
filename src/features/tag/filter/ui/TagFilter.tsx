@@ -11,6 +11,7 @@ export const TagFilter = ({ selectedTag, onSelectTag }: TagFilterProps) => {
   const { tags, fetchTags } = useTags()
 
   useEffect(() => {
+    console.log('useEffect, fetchTags')
     fetchTags()
   }, [fetchTags])
 
