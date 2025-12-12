@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "../../../shared/ui"
 import { highlightText } from "../../../shared/lib/highlight"
-import { Post } from "../../../entities/post/model/types"
+import { Post, PostWithAuthor } from "../../../entities/post/model/types"
 import { User } from "../../../entities/user/model/types"
 import { PostSearch } from "../../../features/post/search/ui/PostSearch"
 import { PostSort } from "../../../features/post/sort/ui/PostSort"
@@ -29,23 +29,16 @@ import { UserDetailModal } from "../../../features/user/detail/ui/UserDetailModa
 import { usePosts } from "../../../entities/post/model/usePost"
 import { useTags } from "../../../entities/tag/model/useTags"
 import { useUser } from "../../../entities/user/model/useUser"
+import { addPost as apiAddPost } from "../../../features/post/add/api"
+import { updatePost as apiUpdatePost } from "../../../features/post/edit/api"
+import { deletePost as apiDeletePost } from "../../../features/post/delete/api"
 
 export const PostsManagerWidget = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const queryParams = new URLSearchParams(location.search)
 
-  const {
-    posts,
-    total,
-    loading,
-    fetchPosts,
-    searchPosts,
-    fetchPostsByTag,
-    addPost,
-    updatePost,
-    deletePost,
-  } = usePosts()
+  const { posts, total, loading, fetchPosts, searchPosts, fetchPostsByTag, setPosts } = usePosts()
 
   const { fetchTags } = useTags()
   const { fetchUserById } = useUser()
@@ -99,7 +92,8 @@ export const PostsManagerWidget = () => {
   // 게시물 추가 핸들러
   const handleAddPost = async () => {
     try {
-      await addPost(newPost)
+      const data = await apiAddPost(newPost)
+      setPosts((prevPosts) => [data as PostWithAuthor, ...prevPosts])
       setShowAddDialog(false)
       setNewPost({ title: "", body: "", userId: 1 })
     } catch (error) {
@@ -111,10 +105,21 @@ export const PostsManagerWidget = () => {
   const handleUpdatePost = async () => {
     if (!selectedPost) return
     try {
-      await updatePost(selectedPost)
+      const data = await apiUpdatePost(selectedPost)
+      setPosts((prevPosts) => prevPosts.map((post) => (post.id === data.id ? (data as PostWithAuthor) : post)))
       setShowEditDialog(false)
     } catch (error) {
       console.error("게시물 업데이트 오류:", error)
+    }
+  }
+
+  // 게시물 삭제 핸들러
+  const handleDeletePost = async (id: number) => {
+    try {
+      await apiDeletePost(id)
+      setPosts((prevPosts) => prevPosts.filter((post) => post.id !== id))
+    } catch (error) {
+      console.error("게시물 삭제 오류:", error)
     }
   }
 
@@ -234,7 +239,7 @@ export const PostsManagerWidget = () => {
                 >
                   <Edit2 className="w-4 h-4" />
                 </Button>
-                <DeletePostButton onDelete={() => deletePost(post.id)} />
+                <DeletePostButton onDelete={() => handleDeletePost(post.id)} />
               </div>
             </TableCell>
           </TableRow>

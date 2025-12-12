@@ -51,25 +51,3 @@ export const fetchPostsByTag = async (tag: string): Promise<FetchPostsResponse> 
     posts: postsWithUsers,
   }
 }
-
-export const addPost = async (newPost: Pick<Post, "title" | "body" | "userId">): Promise<Post> => {
-  const data = await callAPI<Post>("/posts/add", {
-    method: "POST",
-    body: newPost,
-  })
-  return data
-}
-
-export const updatePost = async (post: Post): Promise<Post> => {
-  const data = await callAPI<Post>(`/posts/${post.id}`, {
-    method: "PUT",
-    body: post,
-  })
-  return data
-}
-
-export const deletePost = async (id: number): Promise<void> => {
-  await callAPI<void>(`/posts/${id}`, {
-    method: "DELETE",
-  })
-}
