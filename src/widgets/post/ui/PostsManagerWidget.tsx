@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "../../../shared/ui"
 import { highlightText } from "../../../shared/lib/highlight"
-import { Post, PostWithAuthor } from "../../../entities/post/model/types"
+import { Post } from "../../../entities/post/model/types"
 import { User } from "../../../entities/user/model/types"
 import { PostSearch } from "../../../features/post/search/ui/PostSearch"
 import { PostSort } from "../../../features/post/sort/ui/PostSort"
@@ -27,7 +27,7 @@ import { CommentListWidget } from "../../comment/ui/CommentListWidget"
 import { TagFilter } from "../../../features/tag/filter/ui/TagFilter"
 import { UserDetailModal } from "../../../features/user/detail/ui/UserDetailModal"
 import { usePosts } from "../../../entities/post/model/usePost"
-import { useTags } from "../../../entities/tag/model/useTags"
+
 import { useUser } from "../../../entities/user/model/useUser"
 import { addPost as apiAddPost } from "../../../features/post/add/api"
 import { updatePost as apiUpdatePost } from "../../../features/post/edit/api"
@@ -49,7 +49,7 @@ export const PostsManagerWidget = () => {
   const [sortOrder, setSortOrder] = useState(queryParams.get("sortOrder") || "asc")
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
-  const [newPost, setNewPost] = useState<Pick<Post, "title" | "body" | "userId"> | null>({ title: "", body: "", userId: 1 })
+  const [newPost, setNewPost] = useState<Pick<Post, "title" | "body" | "userId">>({ title: "", body: "", userId: 1 })
   const [selectedTag, setSelectedTag] = useState(queryParams.get("tag") || "")
   const [showPostDetailDialog, setShowPostDetailDialog] = useState(false)
   const [showUserModal, setShowUserModal] = useState(false)
@@ -200,7 +200,7 @@ export const PostsManagerWidget = () => {
               </div>
             </TableCell>
             <TableCell>
-              <div className="flex items-center space-x-2 cursor-pointer" onClick={() => handleOpenUserModal(post.author)}>
+              <div className="flex items-center space-x-2 cursor-pointer" onClick={() => post.author && handleOpenUserModal(post.author)}>
                 <img src={post.author?.image} alt={post.author?.username} className="w-8 h-8 rounded-full" />
                 <span>{post.author?.username}</span>
               </div>
@@ -272,7 +272,18 @@ export const PostsManagerWidget = () => {
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
         newPost={newPost}
-        onNewPostChange={(field, value) => setNewPost((prev) => ({ ...prev, [field]: value }))}
+        onNewPostChange={(field, value) =>
+          setNewPost((prev) => {
+            let typedValue: string | number
+            if (field === "userId") {
+              typedValue = value as number
+            } else {
+              typedValue = value as string
+            }
+
+            return { ...prev, [field]: typedValue }
+          })
+        }
         onAddPost={handleAddPost}
       />
 
@@ -287,11 +298,11 @@ export const PostsManagerWidget = () => {
       {/* 게시물 상세 보기 대화상자 */}
       <Dialog open={showPostDetailDialog} onOpenChange={setShowPostDetailDialog}>
         <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>{highlightText(selectedPost?.title, searchQuery)}</DialogTitle>
+          <DialogHeader className="">
+            <DialogTitle>{highlightText(selectedPost?.title || "", searchQuery)}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p>{highlightText(selectedPost?.body, searchQuery)}</p>
+            <p>{highlightText(selectedPost?.body || "", searchQuery)}</p>
             {selectedPost && <CommentListWidget postId={selectedPost.id} searchQuery={searchQuery} />}
           </div>
         </DialogContent>

@@ -54,7 +54,7 @@ export const CommentListWidget = ({ postId, searchQuery }: CommentListProps) => 
   }
 
   const handleLikeComment = (commentId: number, currentLikes: number) => {
-    likeComment({ id, currentLikes })
+    likeComment({ id: commentId, currentLikes })
   }
 
   const isMutating = isUpdatingComment || isDeletingComment || isLikingComment
