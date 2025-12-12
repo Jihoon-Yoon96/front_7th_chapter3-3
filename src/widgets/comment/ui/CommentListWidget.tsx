@@ -78,8 +78,8 @@ export const CommentListWidget = ({ postId, searchQuery }: CommentListProps) => 
     setShowEditDialog(true)
   }
 
-  const handleAddComment = (newComment: { body: string; postId: number; userId: number }) => {
-    addCommentMutation.mutate(newComment)
+  const handleAddComment = (body: string) => {
+    addCommentMutation.mutate({ body, postId, userId: 1 })
   }
 
   const handleUpdateComment = (id: number, body: string) => {
@@ -135,7 +135,6 @@ export const CommentListWidget = ({ postId, searchQuery }: CommentListProps) => 
       <AddCommentDialog
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
-        postId={postId}
         onAddComment={handleAddComment}
       />
       <EditCommentDialog
