@@ -1,18 +1,21 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, Textarea, Button } from "../../../../shared/ui"
 import { useEffect, useState } from "react"
 import { Comment } from "../../../../entities/comment/model/types"
-import { useComments } from "../../../../entities/comment/model/useComment"
-import { updateComment as apiUpdateComment } from "../api"
 
 interface EditCommentDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   selectedComment: Comment | null
+  onUpdateComment: (id: number, body: string) => void
 }
 
-export const EditCommentDialog = ({ open, onOpenChange, selectedComment }: EditCommentDialogProps) => {
+export const EditCommentDialog = ({
+  open,
+  onOpenChange,
+  selectedComment,
+  onUpdateComment,
+}: EditCommentDialogProps) => {
   const [editedCommentBody, setEditedCommentBody] = useState("")
-  const { setComments } = useComments()
 
   useEffect(() => {
     if (selectedComment) {
@@ -22,20 +25,9 @@ export const EditCommentDialog = ({ open, onOpenChange, selectedComment }: EditC
     }
   }, [selectedComment])
 
-  const handleUpdateComment = async () => {
+  const handleUpdateComment = () => {
     if (!selectedComment || !editedCommentBody.trim()) return
-    try {
-      const data = await apiUpdateComment(selectedComment.id, editedCommentBody)
-      setComments((prev) => ({
-        ...prev,
-        [selectedComment.postId]: prev[selectedComment.postId].map((comment) =>
-          comment.id === data.id ? data : comment,
-        ),
-      }))
-      onOpenChange(false)
-    } catch (error) {
-      console.error("댓글 업데이트 오류:", error)
-    }
+    onUpdateComment(selectedComment.id, editedCommentBody)
   }
 
   if (!selectedComment) return null
