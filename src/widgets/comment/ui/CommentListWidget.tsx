@@ -10,8 +10,8 @@ import { DeleteCommentButton } from "../../../features/comment/delete/ui/DeleteC
 import { LikeCommentButton } from "../../../features/comment/like/ui/LikeCommentButton"
 import { useLikeComment } from "../../../features/comment/like/model/useLikeComment"
 import { useEditComment } from "../../../features/comment/edit/model/useEditComment"
-import { deleteComment as apiDeleteComment } from "../../../features/comment/delete/api"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useDeleteComment } from "../../../features/comment/delete/model/useDeleteComment"
+import { useQueryClient } from "@tanstack/react-query"
 
 interface CommentListProps {
   postId: number
@@ -29,18 +29,9 @@ export const CommentListWidget = ({ postId, searchQuery }: CommentListProps) => 
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [selectedComment, setSelectedComment] = useState<Comment | null>(null)
 
-  const deleteCommentMutation = useMutation({
-    mutationFn: apiDeleteComment,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["comments", postId] })
-    },
-    onError: (error) => {
-      console.error("댓글 삭제 오류:", error)
-    },
-  })
-
   const { mutate: likeComment, isPending: isLikingComment } = useLikeComment(postId)
   const { mutate: updateComment, isPending: isUpdatingComment } = useEditComment(postId)
+  const { mutate: deleteComment, isPending: isDeletingComment } = useDeleteComment(postId)
 
   const handleOpenEditDialog = (comment: Comment) => {
     setSelectedComment(comment)
@@ -59,14 +50,14 @@ export const CommentListWidget = ({ postId, searchQuery }: CommentListProps) => 
   }
 
   const handleDeleteComment = (commentId: number) => {
-    deleteCommentMutation.mutate(commentId)
+    deleteComment(commentId)
   }
 
   const handleLikeComment = (commentId: number, currentLikes: number) => {
-    likeComment({ id: commentId, currentLikes })
+    likeComment({ id, currentLikes })
   }
 
-  const isMutating = isUpdatingComment || deleteCommentMutation.isPending || isLikingComment
+  const isMutating = isUpdatingComment || isDeletingComment || isLikingComment
 
   if (isLoading || isMutating) {
     return <div className="flex justify-center p-4">댓글 로딩 중...</div>
@@ -97,7 +88,7 @@ export const CommentListWidget = ({ postId, searchQuery }: CommentListProps) => 
               <Button variant="ghost" size="sm" onClick={() => handleOpenEditDialog(comment)}>
                 <Edit2 className="w-3 h-3" />
               </Button>
-              <DeleteCommentButton commentId={comment.id} postId={postId} onDelete={handleDeleteComment} />
+              <DeleteCommentButton commentId={comment.id} onDelete={handleDeleteComment} />
             </div>
           </div>
         ))}
