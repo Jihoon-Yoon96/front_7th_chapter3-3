@@ -12,15 +12,14 @@ export const AddCommentDialog = ({ open, onOpenChange, postId }: AddCommentDialo
   const [newCommentBody, setNewCommentBody] = useState("")
   const { mutate: addComment, isPending } = useAddComment()
 
-  const handleAddComment = async () => {
+  const handleAddComment = () => {
     if (!postId || !newCommentBody.trim()) return
-    try {
-      await addComment({ body: newCommentBody, postId, userId: 1 }) // userId는 임시로 1로 설정
-      setNewCommentBody("")
-      onOpenChange(false)
-    } catch (error) {
-      // 에러는 useAddComment 훅에서 처리됩니다.
-    }
+
+    // 비동기 및 에러 처리는 useAddComment 훅 내부에서 처리됩니다.
+    addComment({ body: newCommentBody, postId, userId: 1 }) // userId는 임시로 1로 설정
+
+    setNewCommentBody("")
+    onOpenChange(false)
   }
 
   return (
