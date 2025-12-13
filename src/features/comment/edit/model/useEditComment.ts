@@ -11,7 +11,12 @@ interface CommentsQueryData {
 export const useEditComment = (postId: number) => {
   const queryClient = useQueryClient()
 
-  return useMutation<Comment, Error, EditCommentVariables>({
+  return useMutation<
+    Comment,
+    Error,
+    EditCommentVariables,
+    { previousCommentsData: CommentsQueryData | undefined }
+  >({
     mutationFn: (variables) => apiUpdateComment(variables.id, variables.body),
 
     onMutate: async (updatedComment) => {
@@ -19,7 +24,8 @@ export const useEditComment = (postId: number) => {
 
       await queryClient.cancelQueries({ queryKey })
 
-      const previousCommentsData = queryClient.getQueryData<CommentsQueryData>(queryKey)
+      const previousCommentsData =
+        queryClient.getQueryData<CommentsQueryData>(queryKey)
 
       queryClient.setQueryData<CommentsQueryData>(queryKey, (oldData) => {
         if (!oldData) {
@@ -28,7 +34,7 @@ export const useEditComment = (postId: number) => {
         const updatedComments = oldData.comments.map((comment) =>
           comment.id === updatedComment.id
             ? { ...comment, body: updatedComment.body }
-            : comment
+            : comment,
         )
         return { ...oldData, comments: updatedComments }
       })
@@ -36,10 +42,13 @@ export const useEditComment = (postId: number) => {
       return { previousCommentsData }
     },
 
-    onError: (err, updatedComment, context) => {
+    onError: (err, _updatedComment, context) => {
       console.error("댓글 업데이트 오류:", err)
       if (context?.previousCommentsData) {
-        queryClient.setQueryData(["comments", postId], context.previousCommentsData)
+        queryClient.setQueryData(
+          ["comments", postId],
+          context.previousCommentsData,
+        )
       }
     },
 
@@ -48,3 +57,4 @@ export const useEditComment = (postId: number) => {
     },
   })
 }
+

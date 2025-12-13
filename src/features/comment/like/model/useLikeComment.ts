@@ -11,15 +11,22 @@ interface CommentsQueryData {
 export const useLikeComment = (postId: number) => {
   const queryClient = useQueryClient()
 
-  return useMutation<Comment, Error, LikeCommentVariables>({
-    mutationFn: (variables) => apiLikeComment(variables.id, variables.currentLikes),
+  return useMutation<
+    Comment,
+    Error,
+    LikeCommentVariables,
+    { previousCommentsData: CommentsQueryData | undefined }
+  >({
+    mutationFn: (variables) =>
+      apiLikeComment(variables.id, variables.currentLikes),
 
     onMutate: async (likedComment) => {
       const queryKey = ["comments", postId]
 
       await queryClient.cancelQueries({ queryKey })
 
-      const previousCommentsData = queryClient.getQueryData<CommentsQueryData>(queryKey)
+      const previousCommentsData =
+        queryClient.getQueryData<CommentsQueryData>(queryKey)
 
       queryClient.setQueryData<CommentsQueryData>(queryKey, (oldData) => {
         if (!oldData) {
@@ -28,7 +35,7 @@ export const useLikeComment = (postId: number) => {
         const updatedComments = oldData.comments.map((comment) =>
           comment.id === likedComment.id
             ? { ...comment, likes: comment.likes + 1 }
-            : comment
+            : comment,
         )
         return { ...oldData, comments: updatedComments }
       })
@@ -36,7 +43,7 @@ export const useLikeComment = (postId: number) => {
       return { previousCommentsData }
     },
 
-    onError: (err, likedComment, context) => {
+    onError: (err, _likedComment, context) => {
       console.error("댓글 좋아요 오류:", err)
       if (context?.previousCommentsData) {
         queryClient.setQueryData(["comments", postId], context.previousCommentsData)

@@ -7,10 +7,17 @@ interface CommentsQueryData {
   comments: Comment[]
 }
 
+type AddCommentVariables = { body: string; postId: number; userId: number }
+
 export const useAddComment = () => {
   const queryClient = useQueryClient()
 
-  return useMutation({
+  return useMutation<
+    Comment,
+    Error,
+    AddCommentVariables,
+    { previousCommentsData: CommentsQueryData | undefined }
+  >({
     mutationFn: apiAddComment, // API 요청을 수행할 함수
 
     onMutate: async (newComment) => {
@@ -20,7 +27,8 @@ export const useAddComment = () => {
       await queryClient.cancelQueries({ queryKey })
 
       // 롤백을 위한 이전 데이터 스냅샷을 저장합니다.
-      const previousCommentsData = queryClient.getQueryData<CommentsQueryData>(queryKey)
+      const previousCommentsData =
+        queryClient.getQueryData<CommentsQueryData>(queryKey)
 
       // 캐시를 낙관적으로 업데이트합니다.
       queryClient.setQueryData<CommentsQueryData>(queryKey, (oldData) => {
@@ -50,13 +58,13 @@ export const useAddComment = () => {
       if (context?.previousCommentsData) {
         queryClient.setQueryData(
           ["comments", newComment.postId],
-          context.previousCommentsData
+          context.previousCommentsData,
         )
       }
     },
 
     // 요청이 완료되면(성공/실패 무관) 서버 데이터와 동기화합니다.
-    onSettled: (data, error, variables) => {
+    onSettled: (_data, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: ["comments", variables.postId] })
     },
   })
